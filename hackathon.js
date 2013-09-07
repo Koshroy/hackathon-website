@@ -4,6 +4,7 @@ var express = require('express'),
 	middleware = require('./middleware'),
 	engines = require('consolidate'),
 	handlebars = require('handlebars'),
+	redis = require('redis'),
 	portNum = 3000;
 
 app.use('/static', express.static('static'));
@@ -57,6 +58,58 @@ app.get('/submissions', function(req, res, next) {
 
 app.get('/info', function(req, res, next) {
 	res.render('info.html');
+});
+
+app.post('/posttest', function(req, res, next) {
+	res.send(500, 'not supported');
+	return;
+	
+	if ( (req.body.name) && (req.body.netids) && (req.body.desc) ) {
+		var uniqueId = new Date().getTime().toString(),
+		    netIdSplit = req.body.netids.split(','),
+		    netIdHash = {},
+		    newNetIdSplit = [],
+		    redisClient = redis.createClient();
+
+		if (netIdSplit.length < 1) {
+			res.send(500, 'no netids given');
+			return;			
+		}
+
+		// Duplicate pruning
+		for(var i = 0; i < netIdSplit.length; i++) {
+			if (!(netIdSplit[i] in netIdHash)) {
+				netIdHash[netIdSplit[i]] = true;
+				newNetIdSplit.push(netIdSplit[i]);
+			}
+			
+		}
+
+		console.log('duplicate pruning is done');
+
+
+		for(var i = 0; i < newNetIdSplit.length; i++) {
+			if (redisClient.sismember('netids', newNetIdSplit)) {
+				res.send(500, 'NetID is already added to an existing project');
+				break;
+			}
+			redisClient.sadd('netids', newNetIdSplit[i]);
+		}
+
+		console.log('netid stuff', newNetIdSplit);
+
+		redisClient.lpush('submissions', uniqueId);
+		redisClient.lpush('submission:'+uniqueId+':name', req.body.name);
+		for(var i = 0; i < newNetIdSplit.length; i++) {
+			redisClient.lpush('submission:'+uniqueId+':netids', newNetIdSplit[i]);
+		}
+		redisClient.lpush('submission:'+uniqueId+':desc', req.body.desc);
+		redisClient.quit();
+		res.send('success');
+	}
+	else {
+		res.send(500, 'Did not specify name, netids, and description properly!');
+	}
 });
 
 

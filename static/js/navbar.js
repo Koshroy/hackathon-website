@@ -1,18 +1,18 @@
 var hackathonEndTime = 1378594800000;
 //var hackathonEndTime = 1378602000000;
 var timeIncr = 1000; // ms of clock increment callback
-var lastTime = 0;
+var lastTimeNavbar = 0;
 
 $(document).ready(function () {
-	lastTime = new Date().getTime();
-	//console.log(hackathonEndTime - lastTime);
+	lastTimeNavbar = new Date().getTime();
+	//console.log(hackathonEndTime - lastTimeNavbar);
 	console.log(hackathonEndTime);
-	console.log(lastTime);
-	$('#time-div-navbar').html(formatDateTime(hackathonEndTime - lastTime));
+	console.log(lastTimeNavbar);
+	$('#time-div-navbar').html(formatDateTime(hackathonEndTime - lastTimeNavbar));
 
 	window.setInterval(function() { 
-		lastTime = lastTime + timeIncr;
-		$('#time-div-navbar').html(formatDateTime(hackathonEndTime - lastTime));
+		lastTimeNavbar = lastTimeNavbar + timeIncr;
+		$('#time-div-navbar').html(formatDateTime(hackathonEndTime - lastTimeNavbar));
 	},
 	timeIncr);
 });
