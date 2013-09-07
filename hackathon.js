@@ -61,15 +61,16 @@ app.get('/info', function(req, res, next) {
 });
 
 app.post('/posttest', function(req, res, next) {
-	res.send(500, 'not supported');
+	res.send('500', 'post test not supported');
 	return;
-	
 	if ( (req.body.name) && (req.body.netids) && (req.body.desc) ) {
 		var uniqueId = new Date().getTime().toString(),
 		    netIdSplit = req.body.netids.split(','),
 		    netIdHash = {},
 		    newNetIdSplit = [],
 		    redisClient = redis.createClient();
+
+		console.log('name', req.body.name, 'netids', req.body.netids, 'desc', req.body.desc);
 
 		if (netIdSplit.length < 1) {
 			res.send(500, 'no netids given');
@@ -85,15 +86,22 @@ app.post('/posttest', function(req, res, next) {
 			
 		}
 
-		console.log('duplicate pruning is done');
+		console.log('duplicate pruning is done', newNetIdSplit);
 
 
 		for(var i = 0; i < newNetIdSplit.length; i++) {
-			if (redisClient.sismember('netids', newNetIdSplit)) {
-				res.send(500, 'NetID is already added to an existing project');
-				break;
-			}
-			redisClient.sadd('netids', newNetIdSplit[i]);
+			console.log('haha', newNetIdSplit[i]);
+			redisClient.sismember('netids', 'ab', function (err, boolRes) {
+				console.log('netid', newNetIdSplit[i], 'boolRes', boolRes);
+				if (boolRes) {
+					res.send(500, 'NetID is already added to an existing project');
+					redisClient.quit();
+					return;
+				}
+				else {
+					redisClient.sadd('netids', newNetIdSplit[i]);
+				}
+			});
 		}
 
 		console.log('netid stuff', newNetIdSplit);
